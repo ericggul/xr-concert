@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Broadcaster</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 560px;
+      margin: 3rem auto;
+      padding: 0 1rem;
+      background: #111;
+      color: #eee;
+    }
+    h1 { font-size: 1.4rem; }
+    select, button, input {
+      font-size: 1rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #222;
+      color: #eee;
+      width: 100%;
+      margin-top: 0.5rem;
+      box-sizing: border-box;
+    }
+    button { cursor: pointer; background: #2a6df4; border: none; font-weight: 600; }
+    button:disabled { background: #444; cursor: not-allowed; }
+    button.stop { background: #d43c3c; }
+    #status { margin-top: 1.2rem; color: #9ad; }
+    #count { font-size: 2rem; font-weight: 700; }
+    .row { margin-top: 1rem; }
+    #meter {
+      margin-top: 1rem;
+      height: 10px;
+      background: #222;
+      border-radius: 5px;
+      overflow: hidden;
+    }
+    #meterFill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #3c9, #fc3, #f33);
+      transition: width 0.05s linear;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎙️ Audio Broadcaster</h1>
+  <p>Name your broadcast, pick the audio input, then start. Multiple broadcasters can run at once — even from the same machine in separate tabs.</p>
+
+  <div class="row">
+    <label for="bname">Broadcast name</label>
+    <input id="bname" placeholder="e.g. Living room mic" />
+  </div>
+
+  <div class="row">
+    <label for="devices">Audio input</label>
+    <select id="devices"></select>
+  </div>
+
+  <div class="row">
+    <button id="startBtn">Start broadcasting</button>
+  </div>
+
+  <div id="meter"><div id="meterFill"></div></div>
+
+  <p id="status">Not broadcasting.</p>
+  <p>Listeners connected: <span id="count">0</span></p>
+
+  <script>
+    const nameInput = document.getElementById('bname');
+    const deviceSelect = document.getElementById('devices');
+    const startBtn = document.getElementById('startBtn');
+    const statusEl = document.getElementById('status');
+    const countEl = document.getElementById('count');
+    const meterFill = document.getElementById('meterFill');
+
+    const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    let ws = null;
+    let stream = null;
+    let broadcasting = false;
+    const peers = new Map(); // listenerId -> RTCPeerConnection
+    let audioCtx = null;
+    let meterRaf = null;
+
+    nameInput.value = localStorage.getItem('broadcastName') || '';
+
+    async function populateDevices() {
+      // Ask for permission once so device labels become visible.
+      const tmp = await navigator.mediaDevices.getUserMedia({ audio: true });
+      tmp.getTracks().forEach((t) => t.stop());
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      deviceSelect.innerHTML = '';
+      devices
+        .filter((d) => d.kind === 'audioinput')
+        .forEach((d, i) => {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.textContent = d.label || `Audio input ${i + 1}`;
+          deviceSelect.appendChild(opt);
+        });
+    }
+
+    function updateCount() {
+      countEl.textContent = peers.size;
+    }
+
+    function connectSignaling() {
+      ws = new WebSocket(`ws://${location.host}`);
+
+      ws.onopen = () =>
+        ws.send(JSON.stringify({ type: 'register-broadcaster', name: nameInput.value.trim() }));
+
+      ws.onmessage = async (ev) => {
+        const msg = JSON.parse(ev.data);
+        switch (msg.type) {
+          case 'registered':
+            statusEl.textContent = `Broadcasting as “${msg.name}”.`;
+            break;
+          case 'listener-joined':
+            await createPeerForListener(msg.id);
+            break;
+          case 'listener-left': {
+            const pc = peers.get(msg.id);
+            if (pc) pc.close();
+            peers.delete(msg.id);
+            updateCount();
+            break;
+          }
+          case 'answer': {
+            const pc = peers.get(msg.id);
+            if (pc) await pc.setRemoteDescription({ type: 'answer', sdp: msg.sdp });
+            break;
+          }
+          case 'candidate': {
+            const pc = peers.get(msg.id);
+            if (pc && msg.candidate) await pc.addIceCandidate(msg.candidate);
+            break;
+          }
+        }
+      };
+
+      ws.onclose = () => {
+        if (broadcasting) stopBroadcast('Lost connection to server.');
+      };
+    }
+
+    async function createPeerForListener(id) {
+      if (!stream) return;
+      // Replace any stale connection for this listener (e.g. re-subscribe).
+      const old = peers.get(id);
+      if (old) old.close();
+
+      const pc = new RTCPeerConnection(rtcConfig);
+      peers.set(id, pc);
+      updateCount();
+
+      stream.getAudioTracks().forEach((track) => pc.addTrack(track, stream));
+
+      pc.onicecandidate = (ev) => {
+        if (ev.candidate) {
+          ws.send(JSON.stringify({ type: 'candidate-to-listener', id, candidate: ev.candidate }));
+        }
+      };
+      pc.onconnectionstatechange = () => {
+        if (['failed', 'closed', 'disconnected'].includes(pc.connectionState)) {
+          if (peers.get(id) === pc) peers.delete(id);
+          pc.close();
+          updateCount();
+        }
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      ws.send(JSON.stringify({ type: 'offer', id, sdp: pc.localDescription.sdp }));
+    }
+
+    function startMeter() {
+      audioCtx = new AudioContext();
+      const src = audioCtx.createMediaStreamSource(stream);
+      const analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      src.connect(analyser);
+      const data = new Uint8Array(analyser.frequencyBinCount);
+      const tick = () => {
+        analyser.getByteTimeDomainData(data);
+        let peak = 0;
+        for (const v of data) peak = Math.max(peak, Math.abs(v - 128) / 128);
+        meterFill.style.width = `${Math.min(100, peak * 140)}%`;
+        meterRaf = requestAnimationFrame(tick);
+      };
+      tick();
+    }
+
+    async function startBroadcast() {
+      localStorage.setItem('broadcastName', nameInput.value.trim());
+      const deviceId = deviceSelect.value;
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          deviceId: deviceId ? { exact: deviceId } : undefined,
+          // Keep the signal clean for music/line-in sources.
+          echoCancellation: false,
+          noiseSuppression: false,
+          autoGainControl: false,
+          channelCount: 2,
+        },
+      });
+
+      broadcasting = true;
+      startBtn.textContent = 'Stop broadcasting';
+      startBtn.classList.add('stop');
+      deviceSelect.disabled = true;
+      nameInput.disabled = true;
+      statusEl.textContent = 'Connecting…';
+      startMeter();
+      connectSignaling();
+    }
+
+    function stopBroadcast(reason) {
+      broadcasting = false;
+      for (const pc of peers.values()) pc.close();
+      peers.clear();
+      if (ws) { ws.onclose = null; ws.close(); ws = null; }
+      if (stream) { stream.getTracks().forEach((t) => t.stop()); stream = null; }
+      if (meterRaf) cancelAnimationFrame(meterRaf);
+      if (audioCtx) { audioCtx.close(); audioCtx = null; }
+      meterFill.style.width = '0%';
+      startBtn.textContent = 'Start broadcasting';
+      startBtn.classList.remove('stop');
+      deviceSelect.disabled = false;
+      nameInput.disabled = false;
+      updateCount();
+      statusEl.textContent = reason || 'Not broadcasting.';
+    }
+
+    startBtn.onclick = async () => {
+      if (broadcasting) {
+        stopBroadcast();
+      } else {
+        try {
+          await startBroadcast();
+        } catch (err) {
+          statusEl.textContent = `Could not start: ${err.message}`;
+        }
+      }
+    };
+
+    navigator.mediaDevices.ondevicechange = () => { if (!broadcasting) populateDevices(); };
+
+    populateDevices().catch((err) => {
+      statusEl.textContent = `Microphone permission needed to list devices: ${err.message}`;
+    });
+  </script>
+</body>
+</html>

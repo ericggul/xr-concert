@@ -1,0 +1,160 @@
+:root {
+  --paper: #d9dedb;
+  --paper-bright: #edf0ed;
+  --ink: #18201f;
+  --ink-soft: #56605d;
+  --field: #101719;
+  --field-soft: #1c2729;
+  --copper: #a95732;
+  --water: #3f6f76;
+  --chalk: #f2f0e7;
+  --error: #9a332a;
+  --radius: 0.4rem;
+  --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --condensed: "Arial Narrow", "Helvetica Neue Condensed", Arial, sans-serif;
+  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.42;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--copper);
+  outline-offset: 3px;
+}
+
+a {
+  color: inherit;
+}
+
+.home {
+  display: grid;
+  align-content: space-between;
+  min-height: 100dvh;
+  padding: clamp(1.25rem, 4vw, 4rem);
+}
+
+.home__kicker {
+  margin: 0;
+  color: var(--ink-soft);
+}
+
+.home h1 {
+  max-width: 13ch;
+  margin: 8vh 0 auto;
+  font-family: var(--condensed);
+  font-size: clamp(4rem, 12vw, 10rem);
+  font-stretch: condensed;
+  font-weight: 500;
+  letter-spacing: -0.055em;
+  line-height: 0.82;
+}
+
+.home__routes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 12vh;
+}
+
+.home__routes a,
+.button {
+  min-height: 3rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button--filled {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper-bright);
+}
+
+.button--danger {
+  border-color: var(--error);
+  color: var(--error);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.route-shell {
+  min-height: 100dvh;
+  padding: clamp(1.1rem, 3vw, 2.5rem);
+}
+
+.route-title {
+  margin: 0;
+  font-family: var(--condensed);
+  font-size: clamp(2.6rem, 7vw, 6rem);
+  font-stretch: condensed;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+.utility {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.status-dot[data-live="true"] {
+  background: var(--water);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

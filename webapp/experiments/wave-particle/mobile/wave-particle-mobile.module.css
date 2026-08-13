@@ -1,0 +1,77 @@
+.field {
+  position: relative;
+  min-height: 0;
+  margin: 0.65rem 1rem max(1rem, env(safe-area-inset-bottom));
+  overflow: hidden;
+  border-radius: 1.4rem;
+  background: var(--paper-bright);
+  box-shadow: inset 0 0 0 1px rgb(24 32 31 / 18%);
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.field::before,
+.field::after {
+  position: absolute;
+  left: var(--touch-x);
+  top: var(--touch-y);
+  content: "";
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.field[data-mode="wave"]::before,
+.field[data-mode="hybrid"]::before {
+  width: 13rem;
+  height: 13rem;
+  border: 2px solid var(--water);
+  border-radius: 50%;
+  opacity: 0.38;
+}
+
+.field[data-mode="particle"]::after,
+.field[data-mode="hybrid"]::after {
+  width: 0.8rem;
+  height: 0.8rem;
+  border-radius: 50%;
+  background: var(--copper);
+}
+
+.field[data-disabled="true"] {
+  cursor: default;
+  opacity: 0.65;
+}
+
+.field p {
+  position: absolute;
+  left: 1.2rem;
+  bottom: 1rem;
+  margin: 0;
+  font-family: var(--condensed);
+  font-size: clamp(2.2rem, 11vw, 4rem);
+  font-stretch: condensed;
+  font-weight: 500;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  pointer-events: none;
+}
+
+.mark {
+  position: absolute;
+  left: var(--touch-x);
+  top: var(--touch-y);
+  width: 2.4rem;
+  height: 2.4rem;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(0.6);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+
+.mark[data-touching="true"] {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Audio Listener</title>
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 560px;
+      margin: 3rem auto;
+      padding: 0 1rem;
+      background: #111;
+      color: #eee;
+    }
+    h1 { font-size: 1.4rem; }
+    input, button {
+      font-size: 1rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 6px;
+      border: 1px solid #444;
+      background: #222;
+      color: #eee;
+      width: 100%;
+      margin-top: 0.5rem;
+      box-sizing: border-box;
+    }
+    button { cursor: pointer; background: #2a6df4; border: none; font-weight: 600; }
+    button.stop { background: #d43c3c; }
+    #status { margin-top: 1.2rem; color: #9ad; }
+    .row { margin-top: 1rem; }
+    #broadcasts { margin-top: 1.5rem; }
+    .bcast {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+      margin-top: 0.8rem;
+    }
+    .bcast .top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+    .bcast .name { font-weight: 600; overflow-wrap: anywhere; }
+    .bcast .live {
+      color: #3c9;
+      font-weight: 700;
+      font-size: 0.85rem;
+      visibility: hidden;
+      animation: pulse 1.5s infinite;
+    }
+    .bcast.playing .live { visibility: visible; }
+    @keyframes pulse { 50% { opacity: 0.4; } }
+    .bcast button { width: auto; padding: 0.4rem 1rem; margin: 0; flex-shrink: 0; }
+    .bcast .vol {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      margin-top: 0.7rem;
+    }
+    .bcast .vol input { padding: 0; margin: 0; }
+    .bcast .state { font-size: 0.85rem; color: #888; margin-top: 0.5rem; }
+    #empty { color: #888; margin-top: 1.5rem; }
+  </style>
+</head>
+<body>
+  <h1>🔊 Audio Listener</h1>
+  <p>Enter the server's IP address and connect. You can listen to any number of broadcasts at once.</p>
+
+  <div class="row">
+    <label for="serverIp">Server IP (or hostname)</label>
+    <input id="serverIp" placeholder="e.g. 192.168.1.10 or 192.168.1.10:3000" />
+  </div>
+
+  <div class="row">
+    <button id="connectBtn">Connect</button>
+  </div>
+
+  <p id="status">Not connected.</p>
+
+  <div id="broadcasts"></div>
+  <p id="empty" hidden>No active broadcasts. They will appear here as they start.</p>
+
+  <script>
+    const ipInput = document.getElementById('serverIp');
+    const connectBtn = document.getElementById('connectBtn');
+    const statusEl = document.getElementById('status');
+    const listEl = document.getElementById('broadcasts');
+    const emptyEl = document.getElementById('empty');
+
+    const rtcConfig = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] };
+
+    let ws = null;
+    let connected = false;
+    // broadcasterId -> { name, pc, audio, el, btn, stateEl, vol, listening }
+    const broadcasts = new Map();
+
+    ipInput.value = localStorage.getItem('serverIp') || location.host;
+
+    function setStatus(text) { statusEl.textContent = text; }
+
+    function connect() {
+      let host = ipInput.value.trim();
+      if (!host) { setStatus('Enter a server IP first.'); return; }
+      if (!host.includes(':')) host += ':3000';
+      localStorage.setItem('serverIp', ipInput.value.trim());
+
+      setStatus(`Connecting to ${host}…`);
+      ws = new WebSocket(`ws://${host}`);
+
+      ws.onopen = () => {
+        connected = true;
+        connectBtn.textContent = 'Disconnect';
+        connectBtn.classList.add('stop');
+        ws.send(JSON.stringify({ type: 'register-listener' }));
+        setStatus('Connected.');
+      };
+
+      ws.onmessage = async (ev) => {
+        const msg = JSON.parse(ev.data);
+        switch (msg.type) {
+          case 'broadcast-list':
+            for (const b of msg.broadcasts) addBroadcast(b.id, b.name);
+            updateEmpty();
+            break;
+          case 'broadcast-added':
+            addBroadcast(msg.id, msg.name);
+            updateEmpty();
+            break;
+          case 'broadcast-removed':
+            removeBroadcast(msg.id);
+            updateEmpty();
+            break;
+          case 'offer':
+            await handleOffer(msg.from, msg.sdp);
+            break;
+          case 'candidate': {
+            const b = broadcasts.get(msg.from);
+            if (b && b.pc && msg.candidate) await b.pc.addIceCandidate(msg.candidate);
+            break;
+          }
+        }
+      };
+
+      ws.onclose = () => {
+        if (connected) disconnect('Disconnected from server.');
+        else setStatus('Could not connect. Check the IP and that the server is running.');
+      };
+      ws.onerror = () => {};
+    }
+
+    function updateEmpty() {
+      emptyEl.hidden = !connected || broadcasts.size > 0;
+    }
+
+    function addBroadcast(id, name) {
+      if (broadcasts.has(id)) return;
+
+      const el = document.createElement('div');
+      el.className = 'bcast';
+      el.innerHTML = `
+        <div class="top">
+          <span class="name"></span>
+          <span class="live">● LIVE</span>
+          <button>Listen</button>
+        </div>
+        <div class="vol">
+          <span>🔉</span>
+          <input type="range" min="0" max="1" step="0.01" value="1" />
+        </div>
+        <div class="state">Not listening.</div>
+      `;
+      el.querySelector('.name').textContent = name;
+      const btn = el.querySelector('button');
+      const vol = el.querySelector('input[type=range]');
+      const stateEl = el.querySelector('.state');
+
+      const audio = document.createElement('audio');
+      audio.autoplay = true;
+      audio.playsInline = true;
+      el.appendChild(audio);
+
+      const entry = { name, pc: null, audio, el, btn, stateEl, vol, listening: false };
+      broadcasts.set(id, entry);
+
+      btn.onclick = () => {
+        if (entry.listening) stopListening(id);
+        else startListening(id);
+      };
+      vol.oninput = () => { audio.volume = vol.value; };
+
+      listEl.appendChild(el);
+    }
+
+    function startListening(id) {
+      const b = broadcasts.get(id);
+      if (!b || b.listening) return;
+      b.listening = true;
+      b.btn.textContent = 'Stop';
+      b.btn.classList.add('stop');
+      b.stateEl.textContent = 'Connecting…';
+      ws.send(JSON.stringify({ type: 'subscribe', broadcasterId: id }));
+    }
+
+    function stopListening(id, uiOnly) {
+      const b = broadcasts.get(id);
+      if (!b) return;
+      if (b.listening && !uiOnly && ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({ type: 'unsubscribe', broadcasterId: id }));
+      }
+      b.listening = false;
+      if (b.pc) { b.pc.close(); b.pc = null; }
+      b.audio.srcObject = null;
+      b.el.classList.remove('playing');
+      b.btn.textContent = 'Listen';
+      b.btn.classList.remove('stop');
+      b.stateEl.textContent = 'Not listening.';
+    }
+
+    async function handleOffer(fromId, sdp) {
+      const b = broadcasts.get(fromId);
+      if (!b || !b.listening) return;
+
+      if (b.pc) b.pc.close();
+      const pc = new RTCPeerConnection(rtcConfig);
+      b.pc = pc;
+
+      pc.ontrack = (ev) => {
+        b.audio.srcObject = ev.streams[0];
+        b.audio.volume = b.vol.value;
+        b.audio.play().catch(() => {
+          b.stateEl.textContent = 'Tap anywhere to allow audio playback.';
+          document.addEventListener('click', () => b.audio.play(), { once: true });
+        });
+        b.el.classList.add('playing');
+        b.stateEl.textContent = 'Receiving live audio.';
+      };
+
+      pc.onicecandidate = (ev) => {
+        if (ev.candidate && ws && ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({
+            type: 'candidate-to-broadcaster',
+            broadcasterId: fromId,
+            candidate: ev.candidate,
+          }));
+        }
+      };
+
+      pc.onconnectionstatechange = () => {
+        if (['failed', 'disconnected'].includes(pc.connectionState) && b.pc === pc) {
+          b.el.classList.remove('playing');
+          b.stateEl.textContent = 'Audio connection lost.';
+        }
+      };
+
+      await pc.setRemoteDescription({ type: 'offer', sdp });
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      ws.send(JSON.stringify({ type: 'answer', broadcasterId: fromId, sdp: pc.localDescription.sdp }));
+    }
+
+    function removeBroadcast(id) {
+      const b = broadcasts.get(id);
+      if (!b) return;
+      stopListening(id, true);
+      b.el.remove();
+      broadcasts.delete(id);
+    }
+
+    function disconnect(reason) {
+      connected = false;
+      for (const id of [...broadcasts.keys()]) removeBroadcast(id);
+      if (ws) { ws.onclose = null; ws.close(); ws = null; }
+      connectBtn.textContent = 'Connect';
+      connectBtn.classList.remove('stop');
+      updateEmpty();
+      setStatus(reason || 'Not connected.');
+    }
+
+    connectBtn.onclick = () => {
+      if (connected) disconnect();
+      else connect();
+    };
+  </script>
+</body>
+</html>
