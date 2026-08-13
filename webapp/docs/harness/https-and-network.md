@@ -10,7 +10,7 @@ If changed server or socket code requires the already-running process to restart
 
 The mobile route and WebRTC microphone use browser capabilities that require a secure context. Localhost trust does not transfer to a phone opening the MacBook's LAN address, so the rehearsal environment uses one generated local root CA and a server certificate containing:
 
-- the MacBook's `<LocalHostName>.local` mDNS name (`macbook-air-5.local` on the current host);
+- the MacBook's `<LocalHostName>.local` mDNS name, detected separately on each host;
 - `localhost` and `127.0.0.1` for laptop-only diagnostics, never as audience entry URLs.
 
 Both Next.js and Socket.IO receive the same certificate. The app therefore loads over HTTPS and its realtime connection upgrades over WSS without mixed content.
@@ -27,7 +27,7 @@ If the MacBook name changes, rerunning `pnpm dev` regenerates the leaf certifica
 2. Connect the MacBook by Ethernet to that access point when possible.
 3. Keep audience phones on one SSID; disable client isolation.
 4. Prevent captive portals, automatic band steering surprises, and venue guest-network isolation.
-5. Confirm `macbook-air-5.local` resolves from iOS and Android on the rehearsal Wi-Fi.
+5. Confirm the `.local` hostname printed by `pnpm dev` resolves from iOS and Android on the rehearsal Wi-Fi.
 6. Install/trust the root CA on test phones before doors open.
 7. Keep the Mac awake, powered, and on a fixed physical network position.
 8. Rehearse with the expected peak device count and with internet disconnected while LAN remains active.

@@ -5,7 +5,7 @@
   "engines": {
     "node": "24.x || 26.x"
   },
-  "packageManager": "pnpm@11.17.0",
+  "packageManager": "pnpm@10.34.0",
   "scripts": {
     "dev": "node scripts/dev-https.mjs",
     "dev:web": "bash scripts/generate-certs.sh && next dev --hostname 0.0.0.0 --port ${WEB_PORT:-10000} --experimental-https --experimental-https-key certificates/server.key --experimental-https-cert certificates/server.pem --experimental-https-ca certificates/rootCA.pem",

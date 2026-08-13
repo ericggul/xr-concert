@@ -30,18 +30,19 @@ The project matches the SCC runtime baseline:
 
 - Node.js `26.5.1` locally (`.nvmrc`, `.node-version`)
 - Node engine range `24.x || 26.x`
-- pnpm `11.17.0`
+- pnpm `10.34.0`, matching Vercel's supported pnpm major
 - Next.js `16.3.0`, React `19.2.4`, App Router
 
 Activate Node 26 and install:
 
 ```bash
 nvm use
-corepack enable
-corepack prepare pnpm@11.17.0 --activate
+npm install --global pnpm@10.34.0
 pnpm install
 cp .env.example .env
 ```
+
+Node 26 no longer bundles Corepack. Installing the exact pnpm version after `nvm use` keeps it isolated under that nvm-managed Node installation. On Vercel, keep the project Root Directory set to `webapp`, select Node `24.x`, and leave Install Command and Build Command on automatic detection.
 
 Start the user-owned HTTPS workflow:
 
@@ -49,11 +50,13 @@ Start the user-owned HTTPS workflow:
 pnpm dev
 ```
 
-The command prints the exact `.local` URLs. Defaults are:
+The command detects the current Mac's `LocalHostName`, generates a matching local certificate, and prints the exact `.local` URLs. With the default ports, their shapes are:
 
-- app: `https://macbook-air-5.local:10000`
-- realtime relay: `https://macbook-air-5.local:10001`
-- mobile certificate: `https://macbook-air-5.local:10001/cert`
+- app: `https://<LocalHostName>.local:10000`
+- realtime relay: `https://<LocalHostName>.local:10001`
+- mobile certificate: `https://<LocalHostName>.local:10001/cert`
+
+`<LocalHostName>` is different on every Mac. Use the URLs printed by `pnpm dev`; do not copy a hostname from this README. You can inspect the unqualified name with `scutil --get LocalHostName`.
 
 Do not use an HTTP fallback for phone rehearsals. Microphone capture and several sensor APIs require a secure context.
 

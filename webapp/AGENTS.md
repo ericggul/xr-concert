@@ -24,7 +24,7 @@
 
 ## Runtime and package management
 
-- Local Node is `26.5.1`; accepted engines are `24.x || 26.x`; package management uses pnpm `11.17.0`.
+- Local Node is `26.5.1`; accepted engines are `24.x || 26.x`; package management uses Vercel-compatible pnpm `10.34.0`.
 - Keep `@types/node` on major 24 until the deployment runtime deliberately changes.
 - Local device testing is HTTPS/WSS only. Do not add an HTTP convenience path.
 - Never commit `.env`, certificates, private keys, TURN credentials, or future admin credentials.

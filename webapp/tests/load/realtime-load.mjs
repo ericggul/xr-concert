@@ -3,7 +3,7 @@ import { io } from "socket.io-client";
 const clients = Number.parseInt(process.env.CLIENTS || "20", 10);
 const durationMs = Number.parseInt(process.env.DURATION_MS || "10000", 10);
 const sampleHz = Number.parseInt(process.env.SAMPLE_HZ || "25", 10);
-const origin = process.env.REALTIME_URL || "https://macbook-air-5.local:10001";
+const origin = process.env.REALTIME_URL || "https://localhost:10001";
 
 const sockets = [];
 let sent = 0;

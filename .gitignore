@@ -4,6 +4,7 @@
 .webapp-git-metadata-backup/
 
 **/node_modules/
+**/.pnpm-store/
 **/.next/
 **/out/
 **/coverage/
@@ -16,4 +17,3 @@
 !**/.env.example
 
 **/.claude/settings.local.json
-

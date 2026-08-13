@@ -1,7 +1,7 @@
-const defaultDevHostname = "macbook-air-5.local";
-
 function getDevHostname() {
-  return process.env.NEXT_PUBLIC_DEV_HOSTNAME || defaultDevHostname;
+  if (process.env.NEXT_PUBLIC_DEV_HOSTNAME) return process.env.NEXT_PUBLIC_DEV_HOSTNAME;
+  if (typeof window !== "undefined") return window.location.hostname;
+  return "localhost";
 }
 
 export function getAppOrigin() {
