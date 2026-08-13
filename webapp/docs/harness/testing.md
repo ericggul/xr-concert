@@ -42,3 +42,4 @@ For every release candidate:
 - A load run establishes behavior under that synthetic traffic on that machine/network.
 - A rehearsal observation establishes what happened in that physical setup.
 - None of these alone proves artistic meaning, audience comprehension, or production scalability.
+- For WebRTC audio, signaling, ICE connection, remote-track delivery, and `play()` resolution are separate intermediate facts. Only a moving source meter plus increasing RTP and audible output on the physical target establishes end-to-end success. Follow `webrtc-agent-guardrails.md`.

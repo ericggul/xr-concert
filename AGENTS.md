@@ -22,6 +22,7 @@
 - Vercel configuration must use `webapp` as the project Root Directory.
 - Future TouchDesigner, Unreal, SFU, or bridge runtimes must have explicit ownership and failure boundaries.
 - Keep WebRTC lean: signaling relays offer/answer/ICE only; one broadcaster owns one peer per listener; receivers apply a remote stream to one audio element. Do not add state machines, audience audio controls, retries, media processing, or abstractions without a reproduced failure that requires them.
+- Before changing WebRTC or microphone behavior, read `webapp/docs/harness/webrtc-agent-guardrails.md`. Preserve the known-good `broadcaster/` behavior through an explicit parity ledger and never claim audible success from connection-state evidence alone.
 
 ## Git safety
 

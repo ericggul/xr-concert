@@ -1,8 +1,10 @@
 # WebRTC audio broadcaster
 
+Agents must read [WebRTC agent guardrails and incident prevention](./webrtc-agent-guardrails.md) before changing this subsystem. That document records the failed initial port, the required parity ledger, and the evidence order for diagnosing inaudible audio.
+
 ## Current flow
 
-The admin operator explicitly starts microphone capture. The relay marks that admin-role socket as the broadcaster. Each connected mobile automatically requests audio while a broadcast is active, after which Socket.IO carries offer, answer, and ICE messages. Audio itself travels over WebRTC.
+The admin operator selects an input and explicitly starts microphone capture. The relay marks that admin-role socket as the broadcaster. A mobile's first artwork gesture requests the active broadcast and permits playback, after which Socket.IO carries offer, answer, and ICE messages. Audio itself travels over WebRTC.
 
 ```text
 admin getUserMedia(audio)
@@ -38,7 +40,7 @@ Candidates include a self-hosted media server or a managed SFU. Select one only 
 
 ## Relation to SonoBus and Loopback
 
-SonoBus and Loopback remain external audio-routing tools. They are not npm dependencies. If Loopback feeds a browser-selectable virtual microphone, the admin may choose it in the browser/OS input settings; this webapp does not configure the device. SonoBus may continue to carry performer audio independently of this audience-facing WebRTC path.
+SonoBus and Loopback remain external audio-routing tools. They are not npm dependencies. If Loopback exposes a virtual microphone, the operator selects that input in the admin audio-input selector; this webapp does not configure or mix the virtual device. SonoBus may continue to carry performer audio independently of this audience-facing WebRTC path.
 
 ## Required rehearsal checks
 
@@ -50,3 +52,5 @@ SonoBus and Loopback remain external audio-routing tools. They are not npm depen
 - internet loss with LAN intact;
 - TURN-only test for any cross-network scenario;
 - audible latency and dropout observation, not merely ICE `connected` state.
+- selected input identity and visibly moving source meter before any receiver diagnosis;
+- physical audibility on the target phone—`play()` resolution is not sufficient evidence.

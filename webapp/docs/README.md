@@ -11,6 +11,7 @@
 - [Experiment module contract](./harness/experiments.md)
 - [HTTPS, WSS, MacBook routing, and venue network](./harness/https-and-network.md)
 - [WebRTC broadcaster and scaling boundary](./harness/webrtc-broadcast.md)
+- [WebRTC agent guardrails and incident prevention](./harness/webrtc-agent-guardrails.md)
 - [Testing and rehearsal gates](./harness/testing.md)
 
 ## Experiments and tutorials

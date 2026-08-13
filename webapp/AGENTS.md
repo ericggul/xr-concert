@@ -19,6 +19,7 @@
 - Read `llm.txt`, `docs/README.md`, and the document for the owned subsystem.
 - For experiment changes, also read `docs/foundations/mdwa-concert.md`, `docs/foundations/design-guidelines.md`, and the experiment document.
 - Trace every socket event from sender through relay to every consumer before changing its name or payload.
+- Before any WebRTC or microphone change, read `docs/harness/webrtc-agent-guardrails.md` and complete its parity ledger against `../broadcaster`.
 - Consider 5, 20, and 100 concurrent phones, late joins, reconnects, abandoned gestures, duplicate messages, and one failed device.
 
 ## Runtime and package management
@@ -40,6 +41,7 @@
 - Smooth continuous input once at the consuming presentation boundary. Do not independently smooth on mobile, relay, and screen.
 - WebRTC is for media. Socket.IO/WSS is for state, input, presence, admin commands, and WebRTC signaling.
 - Preserve the proven `broadcaster/` media flow: explicit admin input selection, one captured stream, one peer per listener, offer/answer/ICE relay, and one receiver audio element. Keep diagnostics separate from transport logic. Do not add mobile audio UI or a WebRTC state machine without explicit user direction.
+- Never treat signaling success, ICE `connected`, a live remote track, or resolved `play()` as proof of audible audio. Prove capture energy, RTP flow, receiver playback, and physical perception separately.
 - The current WebRTC broadcaster is peer-to-peer. Do not claim it supports 100 listeners. Add an SFU adapter before expanding that promise.
 - Unreal or TouchDesigner integration must consume the aggregate frame boundary. Never issue browser messages directly to individual engine actors.
 
@@ -62,5 +64,6 @@
 ## Verification
 
 - Protocol tests must cover validation, duplicate/stale rejection, lifecycle end, bounded aggregation, and absence of presentation fields.
+- WebRTC work is incomplete until the intended admin input produces audible output on the intended physical phone; static and signaling tests alone are not sufficient.
 - A load harness is not an experience test. Final venue readiness requires real-device HTTPS, Wi-Fi saturation, projector, audio, reconnect, and failure-mode checks.
 - Preserve user changes and unrelated files. Keep shared-registry edits surgical.
