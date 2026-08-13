@@ -19,7 +19,7 @@ Current pure tests cover:
 
 With the relay already running, `pnpm test:load` creates a configurable number of real Socket.IO clients and sends bounded 25 Hz streams. Start at 20, then run 50 and 100 clients on the exact rehearsal network. Record CPU, memory, Socket.IO disconnects, screen cadence, and Wi-Fi behavior.
 
-The load script does not unlock/start a concert session and therefore does not assert artistic output. It exercises connection and ingress transport. A future authenticated harness may add controlled session state, but credentials must not be embedded in the script.
+The load script does not start a concert session and therefore does not assert artistic output. It exercises connection and ingress transport. A future production-authenticated harness may add controlled session state, but credentials must not be embedded in the script.
 
 ## Real-device gate
 

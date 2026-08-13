@@ -22,7 +22,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Set a non-default `ADMIN_PASSCODE`. Start the HTTPS workflow yourself:
+Start the HTTPS workflow yourself:
 
 ```bash
 pnpm dev
@@ -36,7 +36,7 @@ On each test phone, open the printed relay `/cert` URL over the same Wi-Fi, inst
 
 ## 3. Two-phone baseline
 
-1. Open `/admin` on the laptop and unlock it.
+1. Open `/admin` on the laptop.
 2. Confirm the device counts show one screen and two audience phones.
 3. Choose `Particle`, then start input.
 4. Touch phone A near the upper-left and phone B near the lower-right.
@@ -80,9 +80,9 @@ Run the synthetic transport harness separately. It helps locate a technical thre
 
 1. Use headphones during setup to prevent feedback.
 2. In `/admin`, start the microphone.
-3. On two phones, tap `Listen to broadcast`.
+3. Touch the existing artwork surface once on each phone; this is also the browser gesture that permits audio playback.
 4. Confirm audible sound, then stop and restart the broadcast.
-5. Reload one listener and request audio again.
+5. Reload one listener, touch the artwork surface, and confirm audio resumes.
 
 Do not scale this peer-to-peer audio trial to the full audience. Select and integrate an SFU first.
 
@@ -94,7 +94,7 @@ During a live visual gesture:
 2. Reload the projection page: mobile connections and session must remain.
 3. Close admin: the live session must not reset.
 4. Restart only the relay in a planned technical test: pages must show offline/reconnecting rather than pretending to be live.
-5. Restore the relay, unlock admin, reset into a new epoch, and start again.
+5. Restore the relay, reset into a new epoch, and start again.
 
 ## 8. When to add an external renderer
 

@@ -1,5 +1,11 @@
 # HTTPS, WSS, and venue network
 
+## Agent operation rule
+
+Agents never start, stop, restart, or kill the Next.js or realtime server. If runtime verification needs a server that is not running, they must say exactly: `전하, 소인이 감히 실제 작동을 확인해 올리려면 서버가 필요하옵니다. 번거로우시겠지만 서버 켜주세요 전하.`
+
+If changed server or socket code requires the already-running process to restart, they must instead say exactly: `전하, 미천한 소인이 감히 새로 고친 서버 코드를 반영해 올리려면 기존 서버를 다시 기동해야 하옵니다. 번거로우시겠지만 서버 재시작해주세요 전하.` A bare restart command is not acceptable.
+
 ## Why HTTPS is mandatory
 
 The mobile route and WebRTC microphone use browser capabilities that require a secure context. Localhost trust does not transfer to a phone opening the MacBook's LAN address, so the rehearsal environment uses one generated local root CA and a server certificate containing:
@@ -37,7 +43,7 @@ The runner refuses to start if either port is occupied or both resolve to the sa
 
 ## Production boundary
 
-The generated CA is development infrastructure. Development accepts browser origins on the trusted rehearsal LAN; admin mutation still requires the passcode. For public access:
+The generated CA is development infrastructure. Development accepts browser origins and admin-role control on the trusted rehearsal LAN. Before public access:
 
 - use a domain with publicly trusted TLS;
 - set exact `REALTIME_ALLOWED_ORIGINS`;
@@ -46,4 +52,4 @@ The generated CA is development infrastructure. Development accepts browser orig
 - provide owned STUN/TURN or an SFU service for WebRTC;
 - rotate admin and TURN credentials outside browser-visible configuration.
 
-Never put an admin passcode or TURN long-term secret in `NEXT_PUBLIC_*`. The sample client ICE configuration is visible by design; production TURN should use short-lived credentials issued by a backend.
+Never put future admin credentials or TURN long-term secrets in `NEXT_PUBLIC_*`. The sample client ICE configuration is visible by design; production TURN should use short-lived credentials issued by a backend.

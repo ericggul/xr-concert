@@ -16,7 +16,7 @@ The existing prototype remains at `../broadcaster`. This app does not import fro
 
 ## What is implemented
 
-- `/admin`: authenticated start, pause, reset, visual-mode controls, presence counts, audience QR, and microphone broadcast.
+- `/admin`: start, pause, reset, visual-mode controls, presence counts, audience QR, and microphone broadcast.
 - `/mobile`: one full-screen audience instrument plus an optional WebRTC audio listener.
 - `/screen`: a projector-safe canvas renderer.
 - `wave-particle`: the first experiment. A touch is read simultaneously as a discrete particle event and a continuous collective wave field.
@@ -43,7 +43,7 @@ pnpm install
 cp .env.example .env
 ```
 
-Set a real `ADMIN_PASSCODE` in `.env`, then start the user-owned HTTPS workflow:
+Start the user-owned HTTPS workflow:
 
 ```bash
 pnpm dev

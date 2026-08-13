@@ -37,10 +37,10 @@ function createSocket(id, data = {}) {
   };
 }
 
-test("only an authenticated admin can claim the broadcaster role", () => {
+test("only an admin-role socket can claim the broadcaster role", () => {
   const io = createIo();
   const state = { broadcasterId: null, listeners: new Set() };
-  const socket = createSocket("candidate", { adminAuthenticated: true, concertRole: "mobile" });
+  const socket = createSocket("candidate", { concertRole: "mobile" });
   registerBroadcastSignaling({ io, socket, state });
 
   socket.trigger(events.broadcastClaim);
@@ -58,7 +58,7 @@ test("only an authenticated admin can claim the broadcaster role", () => {
 test("signaling is restricted to the active broadcaster and opted-in listener", () => {
   const io = createIo();
   const state = { broadcasterId: null, listeners: new Set() };
-  const admin = createSocket("admin", { adminAuthenticated: true, concertRole: "admin" });
+  const admin = createSocket("admin", { concertRole: "admin" });
   const listener = createSocket("listener", { concertRole: "mobile" });
   const stranger = createSocket("stranger", { concertRole: "mobile" });
   registerBroadcastSignaling({ io, socket: admin, state });
@@ -85,7 +85,7 @@ test("signaling is restricted to the active broadcaster and opted-in listener", 
 test("disconnecting the broadcaster clears every listener", () => {
   const io = createIo();
   const state = { broadcasterId: "admin", listeners: new Set(["one", "two"]) };
-  const admin = createSocket("admin", { adminAuthenticated: true, concertRole: "admin" });
+  const admin = createSocket("admin", { concertRole: "admin" });
   registerBroadcastSignaling({ io, socket: admin, state });
 
   admin.trigger("disconnect");

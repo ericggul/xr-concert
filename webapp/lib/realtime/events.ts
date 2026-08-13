@@ -5,7 +5,6 @@ export const realtimeEvents = {
   session: "concert:session",
   input: "concert:input",
   frame: "concert:frame",
-  adminAuth: "concert:admin:auth",
   adminCommand: "concert:admin:command",
   adminResult: "concert:admin:result",
   broadcastClaim: "broadcast:claim",
@@ -16,6 +15,7 @@ export const realtimeEvents = {
   answer: "broadcast:answer",
   ice: "broadcast:ice",
   broadcastStop: "broadcast:stop",
+  broadcastDiagnostic: "broadcast:diagnostic",
 } as const;
 
 export type ConcertRole = "admin" | "mobile" | "screen" | "external";

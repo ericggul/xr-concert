@@ -18,7 +18,7 @@ The active application and its complete setup documentation live in [`webapp/REA
 cd webapp
 nvm use
 pnpm install
-cp .env.example .env  # first run only; then set ADMIN_PASSCODE
+cp .env.example .env  # first run only
 pnpm dev
 ```
 
@@ -36,4 +36,3 @@ The Next.js application can be deployed from this repository as an independent V
 The current `webapp/realtime-server.mjs` is a stateful, long-running Socket.IO process. It is not part of the Next.js Vercel build and should be deployed to a persistent Node runtime or redesigned around durable shared state before a Vercel-native realtime deployment. Configure the deployed frontend with `NEXT_PUBLIC_REALTIME_URL=https://<relay-domain>`.
 
 Local TLS certificates, `.env` files, generated output, dependencies, and machine-local agent settings are ignored at the repository root.
-

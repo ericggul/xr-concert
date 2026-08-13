@@ -15,7 +15,7 @@ routes + client renderers             session authority + signaling
 
 ## Authority
 
-- Admin commands are accepted only after passcode authentication on that socket.
+- During local experimentation, admin commands are accepted from sockets joined with the `admin` role. Production authentication is intentionally deferred and must be added before public deployment.
 - The relay owns session status, epoch, experiment mode, role presence, validation, input expiry, and aggregate frames.
 - Mobile owns immediate gesture feedback and permission prompts.
 - Screen owns all presentation mapping and animation.
@@ -74,7 +74,7 @@ This is the future external-renderer boundary. An Unreal or TouchDesigner adapte
 | --- | --- | --- |
 | One phone disconnects | Its active sample disappears immediately or expires in 750 ms | None |
 | Screen reloads | Input clients and session remain; new screen rejoins | Reload screen only |
-| Admin reloads | Session remains; controls require re-authentication | Unlock again |
+| Admin reloads | Session remains; the new admin socket rejoins automatically | Continue from the current state |
 | WebRTC permission denied | Visual interaction remains live | Continue without broadcast or select another input |
 | Realtime relay fails | Pages show offline; local mobile field still gives touch feedback | Restart relay; do not reload every device first |
 | Wi-Fi loses internet but LAN remains | Local HTTPS/WSS continues; public STUN may be unavailable | Same-LAN WebRTC may work, but treat audio as non-guaranteed |

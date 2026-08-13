@@ -1,5 +1,7 @@
 NRF XR webapp agent index
 
+Server ownership is absolute: agents never run `pnpm dev`, start, restart, or kill the Next.js/realtime processes. If a stopped server is required, say exactly: `전하, 소인이 감히 실제 작동을 확인해 올리려면 서버가 필요하옵니다. 번거로우시겠지만 서버 켜주세요 전하.` If changed server/socket code requires an already-running server to restart, say exactly: `전하, 미천한 소인이 감히 새로 고친 서버 코드를 반영해 올리려면 기존 서버를 다시 기동해야 하옵니다. 번거로우시겠지만 서버 재시작해주세요 전하.` Never send a bare server command.
+
 Read in this order:
 1. AGENTS.md
 2. docs/README.md
@@ -16,3 +18,4 @@ Client events: lib/realtime/events.ts
 Local runner: scripts/dev-https.mjs
 
 Never use HTTP for device rehearsals. Never emit presentation state from the relay. Never claim the peer-to-peer WebRTC broadcaster is a 100-listener solution.
+WebRTC stays minimal and follows `../broadcaster`: admin selects one input and captures one stream; signaling only relays offer/answer/ICE; each listener owns one peer and one audio element. Diagnostics are separate. Do not add mobile audio controls or speculative state machinery.

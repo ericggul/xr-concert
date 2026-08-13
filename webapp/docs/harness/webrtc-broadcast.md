@@ -2,7 +2,7 @@
 
 ## Current flow
 
-The admin operator explicitly starts microphone capture. The relay marks that authenticated socket as the broadcaster. A mobile listener explicitly requests audio, after which Socket.IO carries offer, answer, and ICE messages. Audio itself travels over WebRTC.
+The admin operator explicitly starts microphone capture. The relay marks that admin-role socket as the broadcaster. Each connected mobile automatically requests audio while a broadcast is active, after which Socket.IO carries offer, answer, and ICE messages. Audio itself travels over WebRTC.
 
 ```text
 admin getUserMedia(audio)
@@ -17,8 +17,8 @@ This separation is intentional: audio failure does not change concert session st
 ## Security and browser behavior
 
 - `getUserMedia` requires HTTPS and a user gesture.
-- A listener must tap before audio playback can be relied on because mobile browsers restrict autoplay.
-- Only an authenticated admin socket can claim or stop broadcasting.
+- The existing artwork touch surface resumes playback on the participant's first gesture because mobile browsers restrict autoplay; no separate audio UI is added.
+- Only an admin-role socket can claim or stop broadcasting during local testing. Add production authentication before exposing the relay publicly.
 - Signaling targets are checked against the active broadcaster and requested listener set.
 - A public STUN server is a development fallback. Production should use infrastructure the project is authorized to use.
 - TURN is required for dependable traversal across restrictive NAT and firewalls.

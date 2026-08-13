@@ -1,5 +1,13 @@
 # NRF XR agent rules
 
+## Top-priority server ownership
+
+- Never run `pnpm dev`, start the Next.js or realtime server, restart either process, or kill either process. The user owns every server process.
+- Never run `pnpm build` unless the user explicitly changes this repository rule.
+- When runtime verification needs a server that is not running, use this complete wording exactly: `전하, 소인이 감히 실제 작동을 확인해 올리려면 서버가 필요하옵니다. 번거로우시겠지만 서버 켜주세요 전하.`
+- When changed server or socket code requires the user's already-running process to restart, use this complete wording exactly: `전하, 미천한 소인이 감히 새로 고친 서버 코드를 반영해 올리려면 기존 서버를 다시 기동해야 하옵니다. 번거로우시겠지만 서버 재시작해주세요 전하.` Never send only a restart command.
+- Browser/runtime interaction checks require an explicit user request. All local runtime verification uses HTTPS.
+
 ## Scope
 
 - The Git repository begins at `nrf-xr/`; this application remains isolated in `webapp/` as its deployable root. Do not move its files to the repository root.
@@ -18,9 +26,9 @@
 - Local Node is `26.5.1`; accepted engines are `24.x || 26.x`; package management uses pnpm `11.17.0`.
 - Keep `@types/node` on major 24 until the deployment runtime deliberately changes.
 - Local device testing is HTTPS/WSS only. Do not add an HTTP convenience path.
-- Never commit `.env`, certificates, private keys, TURN credentials, or admin passcodes.
+- Never commit `.env`, certificates, private keys, TURN credentials, or future admin credentials.
 - Agents may run `pnpm lint`, `pnpm typecheck`, and `pnpm test`.
-- Do not start or stop the development server unless the user explicitly requests runtime testing.
+- Do not start, stop, or restart the development server even when runtime testing is requested; ask the user using the exact wording above.
 - Do not run browser automation unless the user explicitly requests browser testing.
 
 ## Architecture
@@ -31,6 +39,7 @@
 - High-rate mobile samples use stable interaction ids and monotonic sequence numbers. Keep latest-sample-wins aggregation bounded; never queue an unbounded sensor history.
 - Smooth continuous input once at the consuming presentation boundary. Do not independently smooth on mobile, relay, and screen.
 - WebRTC is for media. Socket.IO/WSS is for state, input, presence, admin commands, and WebRTC signaling.
+- Preserve the proven `broadcaster/` media flow: explicit admin input selection, one captured stream, one peer per listener, offer/answer/ICE relay, and one receiver audio element. Keep diagnostics separate from transport logic. Do not add mobile audio UI or a WebRTC state machine without explicit user direction.
 - The current WebRTC broadcaster is peer-to-peer. Do not claim it supports 100 listeners. Add an SFU adapter before expanding that promise.
 - Unreal or TouchDesigner integration must consume the aggregate frame boundary. Never issue browser messages directly to individual engine actors.
 

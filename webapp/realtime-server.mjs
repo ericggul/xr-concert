@@ -40,7 +40,6 @@ const server = createServer(
 );
 
 createConcertRealtimeServer(server, {
-  adminPasscode: process.env.ADMIN_PASSCODE || "",
   allowedOrigins,
   allowAnyOrigin: process.env.NODE_ENV !== "production",
 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { useAudioBroadcaster } from "@/hooks/use-audio-broadcaster";
 import { useConcertSocket } from "@/hooks/use-concert-socket";
@@ -17,31 +17,13 @@ const modes: Array<{ id: ConcertMode; label: string }> = [
 export function AdminConsole() {
   const { socket, connected, connectionError, session, presence, broadcast } = useConcertSocket("admin");
   const audio = useAudioBroadcaster(socket);
-  const [passcode, setPasscode] = useState("");
-  const [authenticated, setAuthenticated] = useState(false);
-  const [authMessage, setAuthMessage] = useState<string | null>(null);
   const mobileUrl = `${getAppOrigin()}/mobile`;
-
-  useEffect(() => {
-    if (!socket) return;
-    const lock = () => setAuthenticated(false);
-    socket.on("disconnect", lock);
-    return () => { socket.off("disconnect", lock); };
-  }, [socket]);
 
   const stateLabel = useMemo(() => {
     if (!connected) return connectionError || "Realtime server offline";
     if (!session) return "Reading session";
     return session.status === "live" ? "Audience input is live" : session.status === "paused" ? "Audience input is paused" : "Session is ready";
   }, [connected, connectionError, session]);
-
-  function authenticate() {
-    socket?.emit(realtimeEvents.adminAuth, { passcode }, ({ ok, reason }: { ok: boolean; reason?: string }) => {
-      setAuthenticated(ok);
-      setAuthMessage(ok ? null : reason || "Authentication failed");
-      if (ok) setPasscode("");
-    });
-  }
 
   function command(type: string, fields: Record<string, unknown> = {}) {
     socket?.emit(realtimeEvents.adminCommand, { type, ...fields });
@@ -66,9 +48,9 @@ export function AdminConsole() {
           <strong>{session?.status || "offline"}</strong>
         </div>
         <div className={styles.actions}>
-          <button className="button button--filled" disabled={!authenticated || session?.status === "live"} onClick={() => command("start")}>Start input</button>
-          <button className="button" disabled={!authenticated || session?.status !== "live"} onClick={() => command("pause")}>Pause</button>
-          <button className="button button--danger" disabled={!authenticated} onClick={() => command("reset")}>Reset session</button>
+          <button className="button button--filled" disabled={!connected || session?.status === "live"} onClick={() => command("start")}>Start input</button>
+          <button className="button" disabled={!connected || session?.status !== "live"} onClick={() => command("pause")}>Pause</button>
+          <button className="button button--danger" disabled={!connected} onClick={() => command("reset")}>Reset session</button>
         </div>
       </section>
 
@@ -80,7 +62,7 @@ export function AdminConsole() {
               <button
                 className={styles.mode}
                 data-selected={session?.mode === mode.id}
-                disabled={!authenticated}
+                disabled={!connected}
                 key={mode.id}
                 onClick={() => command("set-mode", { mode: mode.id })}
               >
@@ -102,7 +84,18 @@ export function AdminConsole() {
         <section className={styles.section} aria-labelledby="audio-title">
           <h2 id="audio-title">Audio broadcast</h2>
           <p>{audio.broadcasting ? `Sending to ${broadcast.listenerCount} listener${broadcast.listenerCount === 1 ? "" : "s"}.` : "Microphone is not broadcasting."}</p>
-          <button className="button" disabled={!authenticated} onClick={audio.broadcasting ? audio.stop : audio.start}>
+          <label className={styles.audioInput}>
+            <span>Input</span>
+            <select disabled={audio.broadcasting} value={audio.deviceId} onChange={(event) => audio.setDeviceId(event.target.value)}>
+              {audio.devices.map((device, index) => (
+                <option key={device.deviceId || index} value={device.deviceId}>
+                  {device.label || `Audio input ${index + 1}`}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className={styles.meter} aria-label="Input signal level"><span style={{ width: `${audio.level * 100}%` }} /></div>
+          <button className="button" disabled={!connected} onClick={audio.broadcasting ? audio.stop : audio.start}>
             {audio.broadcasting ? "Stop broadcast" : "Start microphone"}
           </button>
           {audio.error ? <p className={styles.error}>{audio.error}</p> : null}
@@ -117,16 +110,6 @@ export function AdminConsole() {
         </section>
       </div>
 
-      {!authenticated ? (
-        <form className={styles.auth} onSubmit={(event) => { event.preventDefault(); authenticate(); }}>
-          <label htmlFor="admin-passcode">Unlock controls</label>
-          <div>
-            <input id="admin-passcode" type="password" autoComplete="current-password" value={passcode} onChange={(event) => setPasscode(event.target.value)} />
-            <button className="button button--filled" disabled={!connected || !passcode} type="submit">Unlock</button>
-          </div>
-          {authMessage ? <p className={styles.error}>{authMessage}</p> : null}
-        </form>
-      ) : null}
     </main>
   );
 }

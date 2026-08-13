@@ -25,7 +25,6 @@ function originAllowed(origin, allowedOrigins, allowAnyOrigin) {
 export function createConcertRealtimeServer(httpServer, options = {}) {
   const allowedOrigins = options.allowedOrigins ?? [];
   const allowAnyOrigin = options.allowAnyOrigin ?? true;
-  const adminPasscode = options.adminPasscode ?? "";
   const experiments = createExperimentRegistry();
   const initialExperiment = experiments.values().next().value;
   let session = createSessionState({
@@ -74,16 +73,8 @@ export function createConcertRealtimeServer(httpServer, options = {}) {
       broadcastPresence();
     });
 
-    socket.on(events.adminAuth, ({ passcode } = {}, acknowledge) => {
-      const ok = Boolean(adminPasscode) && passcode === adminPasscode;
-      socket.data.adminAuthenticated = ok;
-      if (typeof acknowledge === "function") {
-        acknowledge({ ok, reason: ok ? undefined : adminPasscode ? "Incorrect passcode" : "ADMIN_PASSCODE is not configured" });
-      }
-    });
-
     socket.on(events.adminCommand, (command = {}) => {
-      if (!socket.data.adminAuthenticated || socket.data.concertRole !== "admin") return;
+      if (socket.data.concertRole !== "admin") return;
       const experiment = experiments.get(session.activeExperiment);
       const next = applySessionCommand(session, command, experiment);
       if (next === session) {
